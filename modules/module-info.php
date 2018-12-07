@@ -702,7 +702,7 @@ add_action( 'jetpack_module_more_info_photon-cdn', 'jetpack_assetcdn_more_info' 
 
 function jetpack_private() {
 	esc_html_e(
-		'Allows private and unlaunched sites, visible only to yourself and those you invite.'
+		'Make your site private. It will only be visible to registered users.'
 	);
 }
 add_action( 'jetpack_module_more_info_private', 'jetpack_private' );
