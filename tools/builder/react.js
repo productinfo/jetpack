@@ -141,7 +141,7 @@ function onBuild( done, err, stats ) {
 		'!_inc/*.min.js',
 		'!modules/**/*.min.js'
 	];
-	gulp.src( Array.concat( sources, sourceNegations ) )
+	gulp.src( sources.concat( sourceNegations ) )
 		.pipe( banner( '/* Do not modify this file directly. It is compiled from other files. */\n' ) )
 		.pipe( gulpif( ! is_prod, sourcemaps.init() ) )
 		.pipe( uglify( {
