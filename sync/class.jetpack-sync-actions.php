@@ -78,7 +78,7 @@ class Jetpack_Sync_Actions {
 				defined( 'PHPUNIT_JETPACK_TESTSUITE' )
 			)
 		) ) {
-			if ( Jetpack_Sync_Settings::get_setting( 'async_sender' ) || ! Jetpack_Constants::is_true( 'ALTERNATE_WP_CRON' ) ) {
+			if ( Jetpack_Sync_Settings::get_setting( 'async_sender' ) && ! Jetpack_Constants::is_true( 'ALTERNATE_WP_CRON' ) ) {
 				if ( ! isset( $_GET['jetpack_sync_async_sender'] ) ) {
 					self::async_sender();
 					return;
