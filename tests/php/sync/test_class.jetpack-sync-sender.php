@@ -428,6 +428,45 @@ class WP_Test_Jetpack_Sync_Sender extends WP_Test_Jetpack_Sync_Base {
 		$this->assertFalse( $sync_queue->has_any_items() ,"We didn't empty the queue" );
 	}
 
+	function test_use_async_sender() {
+		remove_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ), 10, 6 );
+
+		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => true ) );
+		Jetpack_Sync_Actions::add_sender_shutdown();
+		$has_filter_jetpack_sync_send_data_initially = has_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ) );
+
+		// Another request with the specific get parameter
+		$_GET['jetpack_sync_async_sender'] = true;
+		Jetpack_Sync_Actions::add_sender_shutdown();
+		$has_filter_jetpack_sync_send_data_with_get = has_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ) );
+
+		// Revert
+		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => false ) ); // default value
+		unset( $_GET['jetpack_sync_async_sender'] );
+
+		$this->assertFalse( $has_filter_jetpack_sync_send_data_initially );
+		$this->assertTrue( (bool) $has_filter_jetpack_sync_send_data_with_get );
+	}
+
+	function test_ignore_async_sender_alternate_cron() {
+		remove_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ), 10, 6 );
+
+		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => true ) );
+		Jetpack_Constants::set_constant( 'ALTERNATE_WP_CRON', true );
+
+		Jetpack_Sync_Actions::add_sender_shutdown();
+		$has_filter_jetpack_sync_send_data_initially = has_filter( 'jetpack_sync_send_data', array(
+			'Jetpack_Sync_Actions',
+			'send_data'
+		) );
+
+		// Revert
+		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => false ) ); // default value
+		Jetpack_Constants::clear_constants();
+
+		$this->assertTrue( (bool) $has_filter_jetpack_sync_send_data_initially );
+	}
+
 	function run_filter( $data ) {
 		$this->filter_ran = true;
 		return $data;
