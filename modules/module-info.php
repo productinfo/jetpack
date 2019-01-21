@@ -700,9 +700,9 @@ function jetpack_assetcdn_more_info() {
 }
 add_action( 'jetpack_module_more_info_photon-cdn', 'jetpack_assetcdn_more_info' );
 
-function jetpack_private() {
+function jetpack_private_more_info() {
 	esc_html_e(
 		'Make your site private. It will only be visible to registered users.'
 	);
 }
-add_action( 'jetpack_module_more_info_private', 'jetpack_private' );
+add_action( 'jetpack_module_more_info_private', 'jetpack_private_more_info' );
