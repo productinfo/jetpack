@@ -13,6 +13,7 @@ require_once dirname( __FILE__ ) . '/class.jetpack-sync-settings.php';
 class Jetpack_Sync_Sender {
 
 	const NEXT_SYNC_TIME_OPTION_NAME = 'jetpack_next_sync_time';
+	const SYNC_LOCK = 'jetpack_doing_async_send';
 	const WPCOM_ERROR_SYNC_DELAY = 60;
 	const QUEUE_LOCKED_SYNC_DELAY = 10;
 
@@ -27,6 +28,7 @@ class Jetpack_Sync_Sender {
 	private $full_sync_queue;
 	private $codec;
 	private $old_user;
+	private $do_async_request = false;
 
 	// singleton functions
 	private static $instance;
@@ -137,8 +139,8 @@ class Jetpack_Sync_Sender {
 		} elseif ( $exceeded_sync_wait_threshold ) {
 			// if we actually sent data and it took a while, wait before sending again
 			$this->set_next_sync_time( time() + $this->get_sync_wait_time(), $queue->id );
+			delete_transient( self::SYNC_LOCK );
 		}
-
 		return $sync_result;
 	}
 
@@ -188,12 +190,99 @@ class Jetpack_Sync_Sender {
 		return array( $items_to_send, $skipped_items_ids, $items, microtime( true ) - $start_time );
 	}
 
-	public function do_sync_for_queue( $queue ) {
+	public function async_send() {
+		if ( $this->is_locked() ) {
+			$self = $this->get_instance();
+			// Remove any sync sending...
+			remove_action( 'shutdown', array( $self ,'do_sync' ) );
+			remove_action( 'shutdown', array( $self ,'do_full_sync' ) );
+			remove_action( 'shutdown', array( $self ,'maybe_span_async_request' ) );
+		}
 
+		wp_die();
+	}
+
+	public function is_locked() {
+		$lock = $this->_get_async_lock();
+		if ( isset( $_GET['sync_lock'] ) && $_GET['sync_lock'] === $lock ) {
+			return false;
+		}
+		return (bool) ( $lock > time() - 10 );
+	}
+
+	private function _get_async_lock() {
+		global $wpdb;
+		$value = 0;
+		if ( wp_using_ext_object_cache() ) {
+			/*
+			 * Skip local cache and force re-fetch of doing_cron transient
+			 * in case another process updated the cache.
+			 */
+			$value = wp_cache_get( self::SYNC_LOCK, 'transient', true );
+		} else {
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s LIMIT 1", '_transient_' . self::SYNC_LOCK ) );
+			if ( is_object( $row ) )
+				$value = $row->option_value;
+		}
+
+		return $value;
+	}
+
+	public function maybe_span_async_request() {
+
+		// this make sure that we call the request one once and not multiple times per queue
+		if ( ! $this->do_async_request ) {
+			return;
+		}
+		if ( $this->is_locked() ) {
+			return;
+		}
+		$microtime = microtime( true );
+		$lock = sprintf( '%.22F', $microtime );
+		set_transient( self::SYNC_LOCK, $lock, 30 );
+
+		$url = add_query_arg(
+			array(
+				'action' => 'jetpack_sync_async_sender',
+				'sync_lock' => $lock,
+			),
+			admin_url( 'admin-ajax.php' ) );
+		$args = array(
+			'timeout'   => 0.01,
+			'blocking'  => false,
+			/** This filter is documented in wp-includes/class-wp-http-streams.php */
+			'sslverify' => apply_filters( 'https_local_ssl_verify', false )
+		);
+		wp_remote_post( $url, $args );
+	}
+
+	public function is_async_send_request() {
+		return wp_doing_ajax() && isset( $_GET['action'] ) && $_GET['action'] === 'jetpack_sync_async_sender';
+	}
+
+	public function should_send_async() {
+		/**
+		 * Experimental: Allows us to use the way to send sync events async.
+		 *
+		 * This will be an sync setting later.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param int (0) false and 1 is true.
+		 */
+		return (bool) apply_filters( 'pre_option_jetpack_sync_settings_async_sender', 0 );
+	}
+
+	public function do_sync_for_queue( $queue ) {
 		do_action( 'jetpack_sync_before_send_queue_' . $queue->id );
 		if ( $queue->size() === 0 ) {
 			return new WP_Error( 'empty_queue_' . $queue->id );
 		}
+		if ( $this->should_send_async() && ! $this->is_async_send_request() ) {
+			$this->do_async_request = true;
+			return new WP_Error( 'doing_async_request' );
+		}
+
 		// now that we're sure we are about to sync, try to
 		// ignore user abort so we can avoid getting into a
 		// bad state
@@ -277,6 +366,7 @@ class Jetpack_Sync_Sender {
 				return new WP_Error( 'wpcom_error', $wp_error->get_error_code() );
 			}
 		}
+
 		return true;
 	}
 
@@ -357,8 +447,6 @@ class Jetpack_Sync_Sender {
 	function set_max_dequeue_time( $seconds ) {
 		$this->max_dequeue_time = $seconds;
 	}
-
-
 
 	function set_defaults() {
 		$this->sync_queue      = new Jetpack_Sync_Queue( 'sync' );

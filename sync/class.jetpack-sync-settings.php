@@ -24,7 +24,6 @@ class Jetpack_Sync_Settings {
 		'max_queue_size_full_sync'=> true,
 		'sync_via_cron'           => true,
 		'cron_sync_time_limit'    => true,
-		'async_sender'            => false,
 	);
 
 	static $is_importing;

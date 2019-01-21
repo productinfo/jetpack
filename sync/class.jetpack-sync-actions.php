@@ -78,20 +78,12 @@ class Jetpack_Sync_Actions {
 				defined( 'PHPUNIT_JETPACK_TESTSUITE' )
 			)
 		) ) {
-			if ( Jetpack_Sync_Settings::get_setting( 'async_sender' ) && ! Jetpack_Constants::is_true( 'ALTERNATE_WP_CRON' ) ) {
-				if ( ! isset( $_GET['jetpack_sync_async_sender'] ) ) {
-					self::async_sender();
-					return;
-				}
-			}
-
-			if ( isset( $_GET['jetpack_sync_async_sender'] ) ) {
-				ignore_user_abort(true );
-			}
-
 			self::initialize_sender();
 			add_action( 'shutdown', array( self::$sender, 'do_sync' ) );
 			add_action( 'shutdown', array( self::$sender, 'do_full_sync' ) );
+			if ( self::$sender->should_send_async() ) {
+				add_action( 'shutdown', array( self::$sender, 'maybe_span_async_request' ) );
+			}
 		}
 	}
 
@@ -301,6 +293,9 @@ class Jetpack_Sync_Actions {
 
 		// bind the sending process
 		add_filter( 'jetpack_sync_send_data', array( __CLASS__, 'send_data' ), 10, 6 );
+		//
+		add_action( 'wp_ajax_nopriv_jetpack_sync_async_sender', array( self::$sender, 'async_send' ) );
+
 	}
 
 	static function initialize_woocommerce() {
@@ -453,17 +448,6 @@ class Jetpack_Sync_Actions {
 		);
 	}
 
-	static function async_sender() {
-		$url = add_query_arg( 'jetpack_sync_async_sender', true, site_url() );
-		$args = array(
-			'timeout'   => 0.01,
-			'blocking'  => false,
-			/** This filter is documented in wp-includes/class-wp-http-streams.php */
-			'sslverify' => apply_filters( 'https_local_ssl_verify', false )
-		);
-
-		wp_remote_post( $url, $args );
-	}
 }
 
 // Check for WooCommerce support
