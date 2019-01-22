@@ -429,42 +429,60 @@ class WP_Test_Jetpack_Sync_Sender extends WP_Test_Jetpack_Sync_Base {
 	}
 
 	function test_use_async_sender() {
-		remove_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ), 10, 6 );
+		$helper = new Jetpack_Sync_Test_Helper();
+		$helper->filter_to_check( 'pre_http_request' );
+		add_filter( 'pre_option_jetpack_sync_settings_async_sender', '__return_true' );
 
-		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => true ) );
-		Jetpack_Sync_Actions::add_sender_shutdown();
-		$has_filter_jetpack_sync_send_data_initially = has_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ) );
+		$this->sender->do_sync();
+		$this->sender->maybe_span_async_request();
+		remove_filter( 'pre_option_jetpack_sync_settings_async_sender', '__return_true' );
+		// Test that we are making a remote call.
+		$this->assertTrue( (bool) $helper->filter_was_called( 'pre_http_request' ) );
+	}
 
-		// Another request with the specific get parameter
-		$_GET['jetpack_sync_async_sender'] = true;
-		Jetpack_Sync_Actions::add_sender_shutdown();
-		$has_filter_jetpack_sync_send_data_with_get = has_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ) );
+	function test_sending_on_async_call() {
+		add_filter( 'pre_option_jetpack_sync_settings_async_sender', '__return_true' );
+		set_site_transient( 'jetpack_doing_async_send', time(), 100 );
+		// fake the remote call.
+		$time = get_site_transient( 'jetpack_doing_async_send'  );
+		$_GET['sync_lock'] = $time;
+		$is_locked = $this->sender->is_locked();
 
-		// Revert
-		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => false ) ); // default value
-		unset( $_GET['jetpack_sync_async_sender'] );
+		add_filter( 'wp_die_handler', array( $this, '__return_empty_string' ) );
+		$this->sender->async_send();
 
-		$this->assertFalse( $has_filter_jetpack_sync_send_data_initially );
-		$this->assertTrue( (bool) $has_filter_jetpack_sync_send_data_with_get );
+		// Shutdown hooks work as expected
+		$has_filter_shutdown_do_sync = has_action( 'shutdown', array(
+			$this->sender,
+			'do_sync'
+		) );
+		unset( $_GET['sync_lock'] );
+		delete_site_transient( 'jetpack_doing_async_send'  );
+
+		$this->assertFalse( $is_locked, 'The sync sending request is locked!' );
+		$this->assertTrue( (bool) $has_filter_shutdown_do_sync, 'Does not have the shutdown filter set.' );
+
+	}
+
+	function __return_empty_string() {
+		return '__return_empty_string';
 	}
 
 	function test_ignore_async_sender_alternate_cron() {
 		remove_filter( 'jetpack_sync_send_data', array( 'Jetpack_Sync_Actions', 'send_data' ), 10, 6 );
+		add_filter( 'pre_option_jetpack_sync_settings_async_sender', '__return_true' );
 
-		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => true ) );
 		Jetpack_Constants::set_constant( 'ALTERNATE_WP_CRON', true );
 
-		Jetpack_Sync_Actions::add_sender_shutdown();
-		$has_filter_jetpack_sync_send_data_initially = has_filter( 'jetpack_sync_send_data', array(
-			'Jetpack_Sync_Actions',
-			'send_data'
-		) );
-
 		// Revert
-		Jetpack_Sync_Settings::update_settings( array( 'async_sender' => false ) ); // default value
+		remove_filter( 'pre_option_jetpack_sync_settings_async_sender', '__return_true' );
 		Jetpack_Constants::clear_constants();
 
-		$this->assertTrue( (bool) $has_filter_jetpack_sync_send_data_initially );
+		$helper = new Jetpack_Sync_Test_Helper();
+		$helper->filter_to_check( 'jetpack_sync_send_data' );
+		$this->sender->do_sync();
+
+		$this->assertTrue( (bool) $helper->filter_was_called( 'jetpack_sync_send_data' ) );
 	}
 
 	function run_filter( $data ) {
