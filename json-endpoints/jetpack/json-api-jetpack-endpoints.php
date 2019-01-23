@@ -545,7 +545,6 @@ $sync_settings_response = array(
 	'sync_via_cron'            => '(int|bool=false) Set to 1 or true to avoid using cron for sync.',
 	'cron_sync_time_limit'	   => '(int|bool=false) Limit cron jobs to number of seconds',
 	'enqueue_wait_time'        => '(int|bool=false) Wait time in seconds between attempting to continue a full sync, via requests',
-	'async_sender'             => '(bool=false) if a async sender should be used',
 );
 
 // GET /sites/%s/sync/settings

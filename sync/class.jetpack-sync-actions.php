@@ -447,7 +447,6 @@ class Jetpack_Sync_Actions {
 			)
 		);
 	}
-
 }
 
 // Check for WooCommerce support

@@ -366,7 +366,6 @@ class Jetpack_Sync_Sender {
 				return new WP_Error( 'wpcom_error', $wp_error->get_error_code() );
 			}
 		}
-
 		return true;
 	}
 
