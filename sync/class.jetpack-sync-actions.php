@@ -293,7 +293,7 @@ class Jetpack_Sync_Actions {
 
 		// bind the sending process
 		add_filter( 'jetpack_sync_send_data', array( __CLASS__, 'send_data' ), 10, 6 );
-		//
+		// removes the shutdown process when sync request is locked
 		add_action( 'wp_ajax_nopriv_jetpack_sync_async_sender', array( self::$sender, 'async_send' ) );
 
 	}
