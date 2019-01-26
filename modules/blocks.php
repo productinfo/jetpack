@@ -10,8 +10,8 @@
  *
  * @since 6.8.0
  */
-jetpack_register_block(
-	'map',
+register_block_type(
+	'jetpack/map',
 	array(
 		'render_callback' => 'jetpack_map_block_load_assets',
 	)
@@ -47,8 +47,8 @@ if (
 	( defined( 'IS_WPCOM' ) && IS_WPCOM ) ||
 	class_exists( 'Jetpack_Photon' ) && Jetpack::is_module_active( 'photon' )
 ) {
-	jetpack_register_block(
-		'tiled-gallery',
+	register_block_type(
+		'jetpack/tiled-gallery',
 		array(
 			'render_callback' => 'jetpack_tiled_gallery_load_block_assets',
 		)
@@ -88,8 +88,8 @@ if (
  *
  * @since 7.0.0
  */
-jetpack_register_block(
-	'gif',
+register_block_type(
+	'jetpack/gif',
 	array(
 		'render_callback' => 'jetpack_gif_block_render',
 	)
@@ -144,30 +144,30 @@ function jetpack_gif_block_render( $attr ) {
 /**
  * Contact Info block and its child blocks.
  */
-jetpack_register_block( 'contact-info' );
-jetpack_register_block(
-	'email',
+register_block_type( 'jetpack/contact-info' );
+register_block_type(
+	'jetpack/email',
 	array( 'parent' => array( 'jetpack/contact-info' ) )
 );
-jetpack_register_block(
-	'address',
+register_block_type(
+	'jetpack/address',
 	array( 'parent' => array( 'jetpack/contact-info' ) )
 );
-jetpack_register_block(
-	'phone',
+register_block_type(
+	'jetpack/phone',
 	array( 'parent' => array( 'jetpack/contact-info' ) )
 );
 
 /**
  * VR Block.
  */
-jetpack_register_block( 'vr' );
+register_block_type( 'jetpack/vr' );
 
 /**
  * Slideshow Block.
  */
-jetpack_register_block(
-	'slideshow',
+register_block_type(
+	'jetpack/slideshow',
 	array(
 		'render_callback' => 'jetpack_slideshow_block_load_assets',
 	)

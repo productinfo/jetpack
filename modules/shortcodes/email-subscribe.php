@@ -69,8 +69,8 @@ class Jetpack_Email_Subscribe {
 	 * @since 6.9.0
 	 */
 	private function register_gutenberg_block() {
-		jetpack_register_block(
-			self::$block_name,
+		register_block_type(
+			'jetpack/' . self::$block_name,
 			array(
 				'attributes' => array(
 					'title'             => array(
