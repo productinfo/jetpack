@@ -432,18 +432,7 @@ HTML;
 			}
 		}
 
-		$header = 'top' == $spot ? 'wpcnt-header' : '';
-		$about  = __( 'Advertisements', 'jetpack' );
-		return <<<HTML
-		<div class="wpcnt $header">
-			<div class="wpa">
-				<span class="wpa-about">$about</span>
-				<div class="u $spot">
-					$snippet
-				</div>
-			</div>
-		</div>
-HTML;
+		return $this->get_ad_div( $spot, $snippet );
 	}
 
 
@@ -466,10 +455,7 @@ HTML;
 			'height'   => $height,
 		);
 		$ad_number   = count( $this->ads );
-		// Max 6 ads per page.
-		if ( $ad_number > 5 && 'top' !== $location ) {
-			return;
-		}
+
 		$data_tags = $this->params->cloudflare ? ' data-cfasync="false"' : '';
 
 		return <<<HTML
@@ -486,6 +472,40 @@ HTML;
 					});
 				});
 				</script>
+			</div>
+		</div>
+HTML;
+	}
+
+	/**
+	 * Returns the completed div with snipped to be inserted into the page
+	 *
+	 * @param  string  $spot top, side, inline, or belowpost
+	 * @param  string  $snippet The snippet to insert into the div
+	 * @param  array  $css_classes
+	 * @return string The supporting ad unit div
+	 *
+	 * @since 7.1
+	 */
+	function get_ad_div( $spot, $snippet, array $css_classes = null ) {
+		if ( empty( $css_classes ) ) {
+			$css_classes = array();
+		}
+
+		$css_classes[] = 'wpcnt';
+		if ( 'top' == $spot ) {
+			$css_classes[] = 'wpcnt-header';
+		}
+
+		$classes = implode( ' ', $css_classes );
+		$about  = __( 'Advertisements', 'jetpack' );
+		return <<<HTML
+		<div class="$classes">
+			<div class="wpa">
+				<span class="wpa-about">$about</span>
+				<div class="u $spot">
+					$snippet
+				</div>
 			</div>
 		</div>
 HTML;

@@ -21,6 +21,10 @@ class Jetpack_WordAds_Shortcode {
 			return null;
 		}
 		add_shortcode( 'wordads', array( $this, 'wordads_shortcode' ) );
+
+		jetpack_register_block( 'wordads', array(
+			'render_callback' => array( $this, 'gutenblock_render' ),
+		) );
 	}
 
 	/**
@@ -53,13 +57,27 @@ class Jetpack_WordAds_Shortcode {
 			return '<div>' . __( 'The WordAds module is not active', 'jetpack' ) . '</div>';
 		}
 
-		$html = '<div class="jetpack-wordad" itemscope itemtype="https://schema.org/WPAdBlock">';
-
-		$html .= '</div>';
-
+		$html = '<div class="jetpack-wordad" itemscope itemtype="https://schema.org/WPAdBlock"></div>';
 		$html = $wordads->insert_inline_ad( $html );
 
 		return $html;
+	}
+
+	public static function gutenblock_render( $attr ) {
+		global $wordads;
+
+		if ( is_feed() || apply_filters( 'wordads_inpost_disable', false ) ) {
+			return '';
+		}
+
+		if ( $wordads->option( 'wordads_house' ) ) {
+			return $wordads->get_ad( 'inline', 'house' );
+		}
+
+		$section_id = 0 === $wordads->params->blog_id ? WORDADS_API_TEST_ID : $wordads->params->blog_id . '6';
+		// TODO generate snippet from params
+		$snippet = $wordads->get_ad_snippet( $section_id, '250', '300', 'inline', 'mrec', 'float:left;margin-right:5px;margin-top:0px;' );
+		return $wordads->get_ad_div( 'inline', $snippet );
 	}
 }
 
