@@ -1,0 +1,20 @@
+diff --git a/gulpfile.babel.js b/gulpfile.babel.js
+index 5f7ee321a..c64537c73 100644
+--- a/gulpfile.babel.js
++++ b/gulpfile.babel.js
+@@ -196,6 +196,15 @@ gulp.task( 'languages:cleanup', function( done ) {
+ 				} );
+ 				done();
+ 			} );
++
++			log( 'Cleaning up POT files.' );
++			del( [
++				'_inc/build/blocks/*.pot',
++				'./_inc/build/jetpack-strings.pot',
++				'./_inc/build/merged-strings.pot',
++			] ).then( function() {
++				done();
++			} );
+ 		}
+ 	);
+ } );
