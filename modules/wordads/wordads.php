@@ -23,20 +23,20 @@ class WordAds {
 	 * @var array
 	 */
 	public static $ad_tag_ids = array(
-		'mrec'           => array(
+		'mrec' => array(
 			'tag'    => '300x250_mediumrectangle',
 			'height' => '250',
 			'width'  => '300',
 		),
-		'lrec'           => array(
-			'tag'    => '336x280_largerectangle',
-			'height' => '280',
-			'width'  => '336',
-		),
-		'leaderboard'    => array(
+		'leaderboard' => array(
 			'tag'    => '728x90_leaderboard',
 			'height' => '90',
 			'width'  => '728',
+		),
+		'mobile_leaderboard' => array(
+			'tag'    => '320x50_mobileleaderboard',
+			'height' => '50',
+			'width'  => '320',
 		),
 		'wideskyscraper' => array(
 			'tag'    => '160x600_wideskyscraper',
@@ -478,7 +478,7 @@ HTML;
 	}
 
 	/**
-	 * Returns the completed div with snipped to be inserted into the page
+	 * Returns the completed ad div with snipped to be inserted into the page
 	 *
 	 * @param  string  $spot top, side, inline, or belowpost
 	 * @param  string  $snippet The snippet to insert into the div
@@ -487,7 +487,7 @@ HTML;
 	 *
 	 * @since 7.1
 	 */
-	function get_ad_div( $spot, $snippet, array $css_classes = null ) {
+	function get_ad_div( $spot, $snippet, array $css_classes = array() ) {
 		if ( empty( $css_classes ) ) {
 			$css_classes = array();
 		}
@@ -497,7 +497,7 @@ HTML;
 			$css_classes[] = 'wpcnt-header';
 		}
 
-		$classes = implode( ' ', $css_classes );
+		$classes = esc_attr( implode( ' ', $css_classes ) );
 		$about  = __( 'Advertisements', 'jetpack' );
 		return <<<HTML
 		<div class="$classes">

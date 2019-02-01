@@ -74,9 +74,9 @@ class Jetpack_WordAds_Shortcode {
 			return $wordads->get_ad( 'inline', 'house' );
 		}
 
-		$section_id = 0 === $wordads->params->blog_id ? WORDADS_API_TEST_ID : $wordads->params->blog_id . '6';
+		$section_id = 0 === $wordads->params->blog_id ? WORDADS_API_TEST_ID : $wordads->params->blog_id . '6'; // 6 is to keep track of gutenblock ads
 		// TODO generate snippet from params
-		$snippet = $wordads->get_ad_snippet( $section_id, '250', '300', 'inline', 'mrec', 'float:left;margin-right:5px;margin-top:0px;' );
+		$snippet = $wordads->get_ad_snippet( $section_id, '250', '300', 'inline', 'inpost', 'float:left;margin-right:5px;margin-top:0px;' );
 		return $wordads->get_ad_div( 'inline', $snippet );
 	}
 }
